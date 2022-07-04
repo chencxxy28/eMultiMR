@@ -1,0 +1,1091 @@
+rm(list=ls(all=TRUE))
+library(psych)
+library(survival)
+library(rootSolve)
+library(MASS)
+library(mvtnorm)
+library(bindata)
+library(geepack)
+
+v<-function(x,beta,dist) #function used to calculate variance, mean, and derivative of random variables followed by binomial, poisson, and gaussian
+{ 
+  n<-length(x[,1])
+  reg<-x%*%beta
+  pi<-exp(reg)/(1+exp(reg))
+  if (dist=="gaussian")
+  {
+    v<-rep(1,n)
+    der<-x
+    mu<-reg
+  }
+  else if (dist=="binomial")
+  {
+    v<-pi*(1-pi)
+    der<-x*as.vector(v)
+    mu<-as.vector(pi)
+  }
+  else if (dist=="poisson")
+  {
+    v<-exp(reg)
+    der<-x*as.vector(exp(reg))
+    mu<-as.vector(exp(reg))
+  }
+  list(v=v,der=der,mu=mu)
+}
+
+#lambda for propensity scores
+lambda_propensity<-function(ZZ)
+{
+  ZZ<-ZZ
+  dim(ZZ)
+  apply(ZZ,1,mean)
+  
+  gamma<-1
+  c<-0
+  lambda<-rep(0,nrow(ZZ))
+  tol<-10e-8
+  Delta_old<-0
+  repeat{
+    rl<-R1der(lambda,ZZ)
+    rll<-R2der(lambda,ZZ) 
+    Delta<--ginv(rll)%*%rl
+    if(mean(abs(Delta))<tol | sum(Delta-Delta_old)==0)
+    {break}else{
+      repeat{
+        mm<-0
+        repeat{
+          delta<-gamma*Delta
+          index_1<-apply(ZZ,2,function (xx)
+          {ifelse(1+t(lambda+delta)%*%as.matrix(xx,ncol=1)<=0,1,0)}
+          )
+          if (sum(index_1)>0)
+          {gamma<-gamma/2
+          mm<-mm+1}else{break}}
+        index_2<-ifelse(R0der(lambda+delta,ZZ)-R0der(lambda,ZZ)<0,1,0)
+        if (index_2==1)
+        {gamma<-gamma/2}else{break}
+      }
+      Delta_old<-Delta
+    }
+    lambda<-lambda+delta
+    c<-c+1
+    gamma<-(c)^(-0.5)
+  }
+  lambda
+}
+
+##based on adjusted empirical likelihood
+wgeef<-function(beta,adata,r=r,id=id,dist=dist,time=time,m_1=m_1)
+{ #full wgee
+  y<-adata[,1]
+  x<-adata[,-1]
+  n<-length(unique(id))
+  A<-diag(1,time,time)
+  # R1<-diag(1,time,time)
+  # R2<-matrix(1,nrow=time,ncol=time)-diag(1,time,time)
+  # R3<-R2
+  # R3[1,4]<- R3[4,1]<- 0
+  # R4<-diag(0,time,time)
+  # R4[time,time]<-R4[1,1]<-1
+  
+  R1<-R2<-R3<-R4<-diag(0,time)
+  R1[1,1]<-1
+  R2[2,2]<-1
+  R3[3,3]<-1
+  R4[4,4]<-1
+  
+  W<-diag(1,time,time)
+  V<-v(x,beta,dist)
+  wgeef<-rep()
+  dwgeef<-rep()
+  sum_dwgee<-0
+  
+  #z.col<-ncol(z)
+  
+  y[which(is.na(y))]<-0
+  x[which(is.na(x))]<-0
+  for (i in 1:m_1)
+  {
+    index_obs<-which(r[((i-1)*time+1):(i*time)]==1)
+    AA<-(A*V$v[((i-1)*time+1):(i*time)]^(-0.5))[index_obs,index_obs]
+    WW<-W*r[((i-1)*time+1):(i*time)]
+    WW_obs<-WW[index_obs,index_obs]
+    R_obs1<-R1[index_obs,index_obs]
+    R_obs2<-R2[index_obs,index_obs]
+    R_obs3<-R3[index_obs,index_obs]
+    R_obs4<-R4[index_obs,index_obs]
+    e<-(y[((i-1)*time+1):(i*time)]-V$mu[((i-1)*time+1):(i*time)])
+    e_obs<-e[index_obs]
+    if (length(e_obs)==1)
+    {
+      wgeei1<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs1)*AA*WW_obs*e_obs)
+      wgeei2<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs2)*AA*WW_obs*e_obs)
+      wgeei3<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs3)*AA*WW_obs*e_obs)
+      wgeei4<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs4)*AA*WW_obs*e_obs)
+      dwgeei1<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs1)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      dwgeei2<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs2)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      dwgeei3<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs3)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      dwgeei4<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs4)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      
+      wgeei134<-rbind(wgeei1,wgeei2,wgeei3,wgeei4)
+      dwgeei134<-rbind(dwgeei1,dwgeei2,dwgeei3,dwgeei4)
+    }else
+    {
+      wgeei1<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs1)%*%AA)%*%WW_obs%*%e_obs
+      wgeei2<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs2)%*%AA)%*%WW_obs%*%e_obs
+      wgeei3<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs3)%*%AA)%*%WW_obs%*%e_obs
+      wgeei4<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs4)%*%AA)%*%WW_obs%*%e_obs
+      
+      dwgeei1<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs1)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      dwgeei2<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs2)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      dwgeei3<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs3)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      dwgeei4<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs4)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      
+      wgeei134<-rbind(wgeei1,wgeei2,wgeei3,wgeei4)
+      dwgeei134<-rbind(dwgeei1,dwgeei2,dwgeei3,dwgeei4)
+    }
+    wgeef<-cbind(wgeef,wgeei134)
+    dwgeef<-cbind(dwgeef,dwgeei134)
+    sum_dwgee<-sum_dwgee+dwgeei134
+  }
+  wgeef_adjusted<-cbind(wgeef,-max(log(m_1)/2,1)*apply(wgeef,1,mean))
+  #l_index<-rep(1:time,time=n)
+  dwgeef_adjusted<-cbind(dwgeef,-max(log(m_1)/2,1)*sum_dwgee/m_1)
+  return(cbind(wgeef_adjusted,dwgeef_adjusted))
+}
+
+##based on empirical likelihood
+wgeef_oracle<-function(beta,adata,r=r,id=id,dist=dist,time=time,m_1=m_1)
+{ #full wgee
+  y<-adata[,1]
+  x<-adata[,-1]
+  n<-length(unique(id))
+  A<-diag(1,time,time)
+  # R1<-diag(1,time,time)
+  # R2<-matrix(1,nrow=time,ncol=time)-diag(1,time,time)
+  # R3<-R2
+  # R3[1,4]<-R3[4,1]<-0
+  # R4<-diag(0,time,time)
+  # R4[time,time]<-R4[1,1]<-1
+  
+  R1<-R2<-R3<-R4<-diag(0,time)
+  R1[1,1]<-1
+  R2[2,2]<-1
+  R3[3,3]<-1
+  R4[4,4]<-1
+  
+  W<-diag(1,time,time)
+  V<-v(x,beta,dist)
+  wgeef<-rep()
+  dwgeef<-rep()
+  sum_dwgee<-0
+  
+  #z.col<-ncol(z)
+  
+  y[which(is.na(y))]<-0
+  x[which(is.na(x))]<-0
+  for (i in 1:m_1)
+  {
+    index_obs<-which(r[((i-1)*time+1):(i*time)]==1)
+    AA<-(A*V$v[((i-1)*time+1):(i*time)]^(-0.5))[index_obs,index_obs]
+    WW<-W*r[((i-1)*time+1):(i*time)]
+    WW_obs<-WW[index_obs,index_obs]
+    R_obs1<-R1[index_obs,index_obs]
+    R_obs2<-R2[index_obs,index_obs]
+    R_obs3<-R3[index_obs,index_obs]
+    R_obs4<-R4[index_obs,index_obs]
+    e<-(y[((i-1)*time+1):(i*time)]-V$mu[((i-1)*time+1):(i*time)])
+    e_obs<-e[index_obs]
+    if (length(e_obs)==1)
+    {
+      wgeei1<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs1)*AA*WW_obs*e_obs)
+      wgeei2<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs2)*AA*WW_obs*e_obs)
+      wgeei3<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs3)*AA*WW_obs*e_obs)
+      wgeei4<-(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs4)*AA*WW_obs*e_obs)
+      dwgeei1<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs1)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      dwgeei2<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs2)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      dwgeei3<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs3)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      dwgeei4<--(matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))%*%(AA*(R_obs4)*AA*WW_obs*t((matrix(V$der[((i-1)*time+1):(i*time),][index_obs,],ncol=1))))
+      
+      wgeei134<-rbind(wgeei1,wgeei2,wgeei3,wgeei4)
+      dwgeei134<-rbind(dwgeei1,dwgeei2,dwgeei3,dwgeei4)
+    }else
+    {
+      wgeei1<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs1)%*%AA)%*%WW_obs%*%e_obs
+      wgeei2<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs2)%*%AA)%*%WW_obs%*%e_obs
+      wgeei3<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs3)%*%AA)%*%WW_obs%*%e_obs
+      wgeei4<-t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs4)%*%AA)%*%WW_obs%*%e_obs
+      
+      dwgeei1<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs1)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      dwgeei2<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs2)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      dwgeei3<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs3)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      dwgeei4<--t(V$der[((i-1)*time+1):(i*time),][index_obs,])%*%(AA%*%(R_obs4)%*%AA)%*%WW_obs%*%(V$der[((i-1)*time+1):(i*time),][index_obs,])
+      
+      wgeei134<-rbind(wgeei1,wgeei2,wgeei3,wgeei4)
+      dwgeei134<-rbind(dwgeei1,dwgeei2,dwgeei3,dwgeei4)
+    }
+    wgeef<-cbind(wgeef,wgeei134)
+    dwgeef<-cbind(dwgeef,dwgeei134)
+    #sum_dwgee<-sum_dwgee+dwgeei12
+  }
+  #wgeef_adjusted<-cbind(wgeef,-max(log(n)/2,1)*apply(wgeef,1,mean))
+  #l_index<-rep(1:time,time=n)
+  #dwgeef_adjusted<-cbind(dwgeef,-max(log(n)/2,1)*sum_dwgee/n)
+  return(cbind(wgeef,dwgeef))
+}
+
+##first derivative of -log EL
+R1der<-function(lambda,ZZ)
+{
+  apply(ZZ,2,function(xx)
+  {as.matrix(xx,ncol=1)/as.vector((1+t(lambda)%*%as.matrix(xx,ncol=1)))})%*%rep(1,ncol(ZZ))
+}
+
+##second derivative of -log EL
+R2der<-function(lambda,ZZ)
+{
+  r2der<-0
+  for(i in 1:ncol(ZZ))
+  {
+    r2der_i<--as.matrix(ZZ[,i],ncol=1)%*%t(as.matrix(ZZ[,i],ncol=1))/as.vector(1+t(lambda)%*%as.matrix(ZZ[,i],ncol=1))^2
+    r2der<-r2der+r2der_i
+  }
+  r2der
+}
+
+##-log EL
+R0der<-function(lambda,ZZ)
+{
+  apply(ZZ,2, function (xx) {log(as.vector(1+t(lambda)%*%as.matrix(xx,ncol=1)))})%*%rep(1,ncol(ZZ))
+}
+
+#information borrow
+MinBo.one<-function(s.outcome,cov.mat,n,proportion,time,r,id,dist="gaussian")
+{
+  y<-s.outcome
+  x<-cov.mat
+  adata<-cbind(y,x)[1:(proportion*n*time),]
+  m_1<-n*proportion
+  dim(adata)
+  
+  ##get initial values for the algorithm
+  fit<-geese(y~x-1,id=id)
+  beta_initial<-fit$beta
+  
+  #function to find lambda, given beta and an
+  lambda_find<-function(beta)
+  {
+    ZZ<-wgeef(beta=beta,adata,r=r,id=id,dist=dist,time=time,m_1=m_1)[,1:(m_1+1)]
+    dim(ZZ)
+    apply(ZZ,1,mean)
+    
+    gamma<-1
+    c<-0
+    lambda<-rep(0,nrow(ZZ))
+    tol<-10e-8
+    Delta_old<-0
+    
+    repeat{
+      rl<-R1der(lambda,ZZ)
+      rll<-R2der(lambda,ZZ) 
+      Delta<--ginv(rll)%*%rl
+      if(mean(abs(Delta))<tol | mean(Delta-Delta_old)==0)
+      {break}else{
+        repeat{
+          mm<-0
+          repeat{
+            delta<-gamma*Delta
+            index_1<-apply(ZZ,2,function (xx)
+            {ifelse(1+t(lambda+delta)%*%as.matrix(xx,ncol=1)<=0,1,0)}
+            )
+            if (sum(index_1)>0)
+            {gamma<-gamma/2
+            mm<-mm+1}else{break}}
+          index_2<-ifelse(R0der(lambda+delta,ZZ)-R0der(lambda,ZZ)<0,1,0)
+          if (index_2==1)
+          {gamma<-gamma/2}else{break}
+        }
+        Delta_old<-Delta
+      }
+      lambda<-lambda+delta
+      c<-c+1
+      gamma<-(c)^(-0.5)
+    }
+    lambda
+  }
+  
+  
+  ####multiroot_method
+  beta_ee<-function(beta)
+  {
+    total<-wgeef(beta=beta,adata,r=r,id=id,dist=dist,time=time,m_1=m_1)
+    ZZ<-total[,1:(m_1+1)]
+    ZZ_d<-total[,(m_1+2):((ncol(x)+1)*m_1+1+ncol(x))]
+    beta_ee<-0
+    lambda=lambda_find(beta)
+    for (i in 1:(m_1+1))
+    {
+      scaler<-(1/(1+t(matrix(lambda,ncol=1))%*%ZZ[,i]))
+      ee_i<-matrix((t(ZZ_d[,((i-1)*ncol(x)+1):(i*ncol(x))])%*%matrix(lambda,ncol=1)),nrow=ncol(x))*as.vector(scaler)
+      beta_ee<-beta_ee+ee_i
+    }
+    beta_ee
+  }
+  
+  ##get estimated beta
+  beta<-multiroot(f = beta_ee, start = as.vector(beta_initial))$root
+  lambda<-lambda_find(beta)
+  
+  #calculate P based on oracle
+  total<-wgeef_oracle(beta=beta,adata,r=r,id=id,dist=dist,time=time,m_1=m_1)
+  ZZ<-total[,1:(m_1)]
+  ZZ_der<-total[,(m_1+1):((ncol(x)+1)*m_1)]
+  Prop_scores<-apply(ZZ,2,function(xx){1/(1+t(matrix(lambda,ncol=1))%*%xx)/m_1})
+  Prop_scores<-c(Prop_scores*m_1,rep(1,(1-proportion)*n))
+  Prop_scores
+}
+
+#conventional iptw
+iptw.binary<-function(prob_fit,trt_ind,main_outcome)
+{
+  trt_a<-trt_ind
+  yy<-main_outcome
+  n<-length(yy)
+  iptw_weight<-prob_fit
+  iptw_weight[trt_a==0]<-(1-prob_fit)[trt_a==0]
+  
+  score_function<-function (eta)
+  {
+    sf=rep()
+    for (i in 1:n)
+    {
+      x_i=as.matrix(c(1,trt_a[i]),ncol=1)
+      mu_i=as.vector(1/(1+exp(-t(x_i)%*%eta)))
+      sf_i=x_i*(yy[i]-mu_i)/iptw_weight[i]
+      sf=cbind(sf,sf_i)
+    }
+    sf
+  }
+  nf<-function (eta)
+  {
+    score_function(eta)%*%rep(1,n)
+  }
+  fit<-glm(yy~trt_a,family = binomial(link = "logit"))
+  eta_initial<-fit$coefficients
+  eta<-multiroot(f = nf, start = as.vector(eta_initial))$root
+  eta
+}
+
+#calculate multiple robust propensity score
+multir.propensity<-function(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,trt_ind=trt_a)
+{
+  trt_a<-trt_ind
+  prob_fitted_right_mean<-mean(prob_fit1)
+  prob_fitted_wrong_mean<-mean(prob_fit2)
+  ZZ_trt_propensity<-rbind((as.vector(prob_fit1)-as.vector(prob_fitted_right_mean))[trt_a==1],
+                           (as.vector(prob_fit2)-as.vector(prob_fitted_wrong_mean))[trt_a==1]
+  )
+  lambda_prop_trt<-lambda_propensity(ZZ_trt_propensity)
+  num_trt<-sum(trt_a==1)
+  Prop_trt<-apply(ZZ_trt_propensity,2,function(xx){1/(1+t(matrix(lambda_prop_trt,ncol=1))%*%xx)/num_trt})
+  
+  #caclulate propensity score for control group
+  prob_fitted_right_control<-1-prob_fit1
+  prob_fitted_wrong_control<-1-prob_fit2
+  prob_fitted_right_mean_control<-mean(prob_fitted_right_control)
+  prob_fitted_wrong_mean_control<-mean(prob_fitted_wrong_control)
+  ZZ_control_propensity<-rbind((as.vector(prob_fitted_right_control)-as.vector(prob_fitted_right_mean_control))[trt_a==0],
+                               (as.vector(prob_fitted_wrong_control)-as.vector(prob_fitted_wrong_mean_control))[trt_a==0]
+  )
+  lambda_prop_control<-lambda_propensity(ZZ_control_propensity)
+  num_control<-sum(trt_a==0)
+  Prop_control<-apply(ZZ_control_propensity,2,function(xx){1/(1+t(matrix(lambda_prop_control,ncol=1))%*%xx)/num_control})
+  
+  #combine propensity
+  Prop_multir<-rep()
+  Prop_multir[trt_a==1]<-Prop_trt
+  Prop_multir[trt_a==0]<-Prop_control
+  
+  Prop_multir
+}
+
+#multiple robust estimator+information borrowing
+multir.ib.est<-function(Prop_multir=Prop_multir,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
+{
+  n=length(main_outcome)
+  trt_a<-trt_ind
+  score_function_en<-function (eta)
+  {
+    sf=rep()
+    for (i in 1:n)
+    {
+      x_i=as.matrix(c(1,trt_a[i]),ncol=1)
+      mu_i=as.vector(1/(1+exp(-t(x_i)%*%eta)))
+      sf_i=x_i*(yy[i]-mu_i)*Prop_scores[i]*Prop_multir[i]
+      sf=cbind(sf,sf_i)
+    }
+    sf
+  }
+  nf_en<-function (eta)
+  {
+    score_function_en(eta)%*%rep(1,n)
+  }
+  fit<-glm(yy~trt_a,family = binomial(link = "logit"))
+  eta_initial<-fit$coefficients
+  eta_en1_multir<-multiroot(f = nf_en, start = as.vector(eta_initial))$root
+  
+  eta_en1_multir
+}
+
+#multiple robust estimator
+multir.est<-function(Prop_multir=Prop_multir,trt_ind=trt_a,main_outcome=yy)
+{
+  n=length(main_outcome)
+  trt_a<-trt_ind
+  score_function_en<-function (eta)
+  {
+    sf=rep()
+    for (i in 1:n)
+    {
+      x_i=as.matrix(c(1,trt_a[i]),ncol=1)
+      mu_i=as.vector(1/(1+exp(-t(x_i)%*%eta)))
+      sf_i=x_i*(yy[i]-mu_i)*Prop_multir[i]
+      sf=cbind(sf,sf_i)
+    }
+    sf
+  }
+  nf_en<-function (eta)
+  {
+    score_function_en(eta)%*%rep(1,n)
+  }
+  fit<-glm(yy~trt_a,family = binomial(link = "logit"))
+  eta_initial<-fit$coefficients
+  eta_multir<-multiroot(f = nf_en, start = as.vector(eta_initial))$root
+  
+  eta_multir
+}
+
+#estimating fct
+est.fct.or<-function (eta,pseudo_y,trt=1)
+{
+  yy<-pseudo_y
+  sf=rep()
+  for (i in 1:n)
+  {
+    x_i=as.matrix(c(1,trt),ncol=1)
+    mu_i=as.vector(1/(1+exp(-t(x_i)%*%eta)))
+    sf_i=x_i*(yy[i]-mu_i)
+    sf=cbind(sf,sf_i)
+  }
+  sf
+}
+
+
+#multiple propensity score with or
+multir.propensity.or<-function(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,
+                               or_fit11=est.or.fct.trt11,or_fit12=est.or.fct.trt12,
+                               or_fit01=est.or.fct.trt01,or_fit02=est.or.fct.trt02,
+                               trt_ind=trt_a)
+{
+  trt_a<-trt_ind
+  #iptw for trt
+  prob_fitted_right_mean<-mean(prob_fit1)
+  prob_fitted_wrong_mean<-mean(prob_fit2)
+  #or for trt
+  or_fit11.mean<-apply(or_fit11,1,mean)
+  or_fit12.mean<-apply(or_fit12,1,mean)
+  
+  ZZ_trt_propensity<-rbind((as.vector(prob_fit1)-as.vector(prob_fitted_right_mean))[trt_a==1],
+                           (as.vector(prob_fit2)-as.vector(prob_fitted_wrong_mean))[trt_a==1],
+                           ((or_fit11)-(or_fit11.mean))[,trt_a==1],
+                           ((or_fit12)-(or_fit12.mean))[,trt_a==1]
+  )
+  lambda_prop_trt<-lambda_propensity(ZZ_trt_propensity)
+  num_trt<-sum(trt_a==1)
+  Prop_trt<-apply(ZZ_trt_propensity,2,function(xx){1/(1+t(matrix(lambda_prop_trt,ncol=1))%*%xx)/num_trt})
+  
+  #iptw for control
+  prob_fitted_right_control<-1-prob_fit1
+  prob_fitted_wrong_control<-1-prob_fit2
+  prob_fitted_right_mean_control<-mean(prob_fitted_right_control)
+  prob_fitted_wrong_mean_control<-mean(prob_fitted_wrong_control)
+  #or for control
+  or_fit01.mean<-apply(or_fit01,1,mean)
+  or_fit02.mean<-apply(or_fit02,1,mean)
+  
+  ZZ_control_propensity<-rbind((as.vector(prob_fitted_right_control)-as.vector(prob_fitted_right_mean_control))[trt_a==0],
+                               (as.vector(prob_fitted_wrong_control)-as.vector(prob_fitted_wrong_mean_control))[trt_a==0],
+                               ((or_fit01)-(or_fit01.mean))[,trt_a==0],
+                               ((or_fit02)-(or_fit02.mean))[,trt_a==0]
+  )
+  lambda_prop_control<-lambda_propensity(ZZ_control_propensity)
+  num_control<-sum(trt_a==0)
+  Prop_control<-apply(ZZ_control_propensity,2,function(xx){1/(1+t(matrix(lambda_prop_control,ncol=1))%*%xx)/num_control})
+  
+  #combine propensity
+  Prop_multir<-rep()
+  Prop_multir[trt_a==1]<-Prop_trt
+  Prop_multir[trt_a==0]<-Prop_control
+  
+  Prop_multir
+}
+
+#dr estimation
+dr.est<-function(prob_fit=prob_fitted_right,trt_ind=trt_a,main_outcome=yy,
+                 pseudo_outcome_obs=pseudo_y.obs,
+                 pseudo_outcome_comb=data.impute$pseudo_y,
+                 pseudo_trt=data.impute$trt
+)
+{
+  trt_a<-trt_ind
+  yy<-main_outcome
+  n<-length(yy)
+  iptw_weight<-prob_fit
+  iptw_weight[trt_a==0]<-(1-prob_fit)[trt_a==0]
+  
+  sf=rep()
+  for (i in 1:n)
+  {
+    x_i=as.matrix(c(1,trt_a[i]),ncol=1)
+    mu_i=pseudo_outcome_obs[i]
+    sf_i=x_i*(yy[i]-mu_i)/iptw_weight[i]
+    sf=cbind(sf,sf_i)
+  }
+  ee1<-apply(sf,1,sum)
+  
+  ee2_function<-function (eta)
+  {
+    sf=rep()
+    for (i in 1:(2*n))
+    {
+      x_i=as.matrix(c(1,pseudo_trt[i]),ncol=1)
+      mu_i=as.vector(1/(1+exp(-t(x_i)%*%eta)))
+      sf_i=x_i*(pseudo_outcome_comb[i]-mu_i)
+      sf=cbind(sf,sf_i)
+    }
+    apply(sf,1,sum)+ee1
+  }
+  
+  fit<-glm(yy~trt_a,family = binomial(link = "logit"))
+  eta_initial<-fit$coefficients
+  eta<-multiroot(f = ee2_function, start = as.vector(eta_initial))$root
+  eta
+}
+
+ar1_cor <- function(n, rho) {
+  exponent <- abs(matrix(1:n - 1, nrow = n, ncol = n, byrow = TRUE) - 
+                    (1:n - 1))
+  rho^exponent
+}
+
+#basic setup
+set.seed(12341)
+n=300 
+#r_0<-0.8
+proportion<-1
+correlation<-0.4
+variance<-1
+time<-4
+id<-rep(1:n,each=time)
+etaT_1<-c(2,1,-1)
+#etaT_2<-c(1.5,0.5,-3)
+etaT_2<-c(1,0,-2)
+gammaT<-c(0.6,-1,-1,1)
+#betaT<-c(-1,1,2,1,1)
+betaT<-c(-1,1,2,1,1,1)
+# RR<-matrix(correlation,nrow=time,ncol=time)
+# diag(RR)<-variance
+R_var<-ar1_cor(time,correlation)
+#R_var[,(time+1):(time+2)]<-r_0
+#R_var[(time+1):(time+2),]<-r_0
+#diag(R_var)<-variance
+#R_var[5,6]<-R_var[6,5]<-0.4
+
+R_var_x<-ar1_cor(time,0.4)
+
+#generate a true averaged-effect size
+# casual_effect<-rep()
+# n_large<-100000
+# for(tt in 1:n_large)
+# {
+#   #generate observed and counterfactual outcomes
+#   x2_i<-rbinom(n,1,0.5)
+#   x3_i<-runif(n)
+#   x_reg_1_i<-x_reg_2_i<-cbind(1,x2_i,x3_i)
+#   residual_1_i<-rnorm(n)
+#   residual_2_i<-rnorm(n)
+#   prob_x_10<-(1+(exp(-x_reg_1_i%*%etaT_1)))^(-1)
+#   prob_x_20<-(1+(exp(-x_reg_2_i%*%etaT_2)))^(-1)
+#   x_10<-qnorm(1-prob_x_10)
+#   x_20<-qnorm(1-prob_x_20)
+#   yy_1<-ifelse(residual_1_i>=x_10,1,0)
+#   yy_2<-ifelse(residual_2_i>=x_20,1,0)
+#   casual_effect_i<-log((mean(yy_1)/(1-mean(yy_1)))/(mean(yy_2)/(1-mean(yy_2))))
+#   casual_effect<-c(casual_effect,casual_effect_i)
+# }
+# casual_effect<-mean(casual_effect)
+
+casual_effect<-1.885925
+iteration<-1000
+
+eta_en1_multir_rr_pool<-rep()
+eta_multir_rr_pool<-rep()
+eta_en1_multir_rw_pool<-rep()
+eta_multir_rw_pool<-rep()
+eta_en1_multir_wr_pool<-rep()
+eta_multir_wr_pool<-rep()
+eta_en1_multir_ww_pool<-rep()
+eta_multir_ww_pool<-rep()
+
+eta_iptw_right_pool<-rep()
+eta_iptw_wrong1_pool<-rep()
+eta_iptw_wrong2_pool<-rep()
+
+est.or.wrong2.all.pool<-rep()
+est.or.wrong1.all.pool<-rep()
+est.or.right.all.pool<-rep()
+
+est.dr.riptw.ror.all.pool<-rep()
+est.dr.wiptw.ror.all.pool<-rep()
+est.dr.riptw.wor.all.pool<-rep()
+est.dr.wiptw.wor.all.pool<-rep()
+
+timestart<-Sys.time()
+for (tt in 1:iteration)
+{
+  #generate data
+  y<-rep()
+  yy_1<-rep()
+  yy_2<-rep()
+  x<-rep()
+  x_reg<-rep()
+  prob<-rep()
+  trt_a<-rep()
+  for(i in 1:n)
+  {
+    #generate observed and counterfactual outcomes
+    x3_i<-rep(runif(1),time=time)
+    x2_i<-rep(rbinom(1,1,0.5),time=time)
+    x_i<- cbind(1, x2_i, x3_i)
+    x_reg_1_i<-x_reg_2_i<-cbind(1,x2_i[1],x3_i[1])
+    allresidual1<-rmvnorm(1,mean=rep(0,time),sigma=R_var)
+    allresidual2<-rmvnorm(1,mean=rep(0,time),sigma=R_var)
+    residual_1_i<-allresidual1[time]
+    residual_2_i<-allresidual2[time]
+    prob_x_10<-(1+(exp(-x_reg_1_i%*%etaT_1)))^(-1)
+    prob_x_20<-(1+(exp(-x_reg_2_i%*%etaT_2)))^(-1)
+    x_10<-qnorm(1-prob_x_10)
+    x_20<-qnorm(1-prob_x_20)
+    yy_1_i<-ifelse(residual_1_i>=x_10,1,0)
+    yy_2_i<-ifelse(residual_2_i>=x_20,1,0)
+    
+    #generate treatment assignment
+    u_var<-x2_i[1]+sin(x3_i[1])+0.5*rnorm(1)
+    x_reg_trt_i<-c(x_reg_1_i,u_var)
+    prob_i<-(1+exp(-x_reg_trt_i%*%gammaT))^(-1)
+    trt_a_i<-rbinom(1,1,prob = prob_i)
+    #trt_a_i<-rbinom(1,1,prob = 0.5)
+    
+    #generate a longitudinal secondary outcomes
+    #x_i<-cbind(x_i,trt_a_i*x_i[,2:3])
+    x_i<-cbind(x_i,trt_a_i*x_i)
+    #x_i<-cbind(1,rep(trt_a_i,time=time))
+    residual_updated_i<-as.vector(allresidual1*trt_a_i+allresidual2*(1-trt_a_i))
+    y_i<-(x_i%*%betaT)+residual_updated_i
+    y<-c(y,y_i)
+    x<-rbind(x,x_i)
+    yy_1<-c(yy_1,yy_1_i)
+    yy_2<-c(yy_2,yy_2_i)
+    prob<-c(prob,prob_i)
+    x_reg<-rbind(x_reg,x_reg_trt_i)
+    trt_a<-c(trt_a,trt_a_i)
+  }
+  
+  #construct combined and observed outcomes
+  yy<-yy_1
+  yy[trt_a==0]<-yy_2[trt_a==0]
+  
+  #MinBo: one secondary outcome situation
+  r<-rep(1,nrow(x))
+  Prop_scores<-MinBo.one(s.outcome=y,cov.mat=x,n=n,proportion=proportion,time=time,r=r,id=id,dist="gaussian")
+  summary(Prop_scores)
+  
+  ######propensity score model
+  #fit logistic regression under right model
+  fit<-glm(trt_a~x_reg-1,family = binomial(link = "logit"))
+  eta_pi_initial<-fit$coefficients
+  prob_fitted_right<-fitted(fit)
+  #prob_fitted_right[trt_a==0]<-(1-prob_fitted_right)[trt_a==0]
+  
+  #fit logistic regression under wrong model 1
+  fit<-glm(trt_a~x_reg[,-3]-1,family = binomial(link = "logit"))
+  eta_pi_initial<-fit$coefficients
+  prob_fitted_wrong<-fitted(fit)
+  #prob_fitted_wrong[trt_a==0]<-(1-prob_fitted_wrong)[trt_a==0]
+  
+  #fit logistic regression under wrong model 2
+  fit<-glm(trt_a~x_reg[,-c(2)]-1,family = binomial(link = "logit"))
+  eta_pi_initial<-fit$coefficients
+  prob_fitted_wrong2<-fitted(fit)
+  #prob_fitted_wrong[trt_a==0]<-(1-prob_fitted_wrong)[trt_a==0]
+  
+  #######regression model
+  #fit correct model
+  data.used.reg<-data.frame(x_reg[,-1],trt_a,x_reg[,-1]*trt_a)
+  names(data.used.reg)<-c("x1","x2","x3","trt","x1trt","x2trt","x3trt")
+  fit<-glm(yy~x1+x2+x3+trt+x1trt+x2trt+x3trt,family = binomial(link = "logit"),data=data.used.reg)
+  pseudo_y.obs<-predict(fit,type ="response")
+  
+  newdata.trt1<-data.frame(x_reg[,-1],1,x_reg[,-1]*1)
+  names(newdata.trt1)<-c("x1","x2","x3","trt","x1trt","x2trt","x3trt")
+  pseudo_y.trt1.right<-predict(fit,newdata.trt1,type ="response")
+  
+  newdata.trt0<-data.frame(x_reg[,-1],0,x_reg[,-1]*0)
+  names(newdata.trt0)<-c("x1","x2","x3","trt","x1trt","x2trt","x3trt")
+  pseudo_y.trt0.right<-predict(fit,newdata.trt0,type ="response")
+  
+  data.impute<-data.frame(pseudo_y=c(pseudo_y.trt1.right,pseudo_y.trt0.right),
+                          trt=c(rep(1,length(pseudo_y.trt1.right)),
+                                rep(0,length(pseudo_y.trt0.right))))
+  #or
+  fit<-glm(pseudo_y~trt,family = gaussian(link = "logit"),data=data.impute)
+  est.or.right.all<-fit$coefficients
+  est.or.right.all.pool<-cbind(est.or.right.all.pool,est.or.right.all)
+  
+  #dr
+  #riptw ror
+  est.dr.riptw.ror.all<-dr.est(prob_fit=prob_fitted_right,trt_ind=trt_a,main_outcome=yy,
+                               pseudo_outcome_obs=pseudo_y.obs,
+                               pseudo_outcome_comb=data.impute$pseudo_y,
+                               pseudo_trt=data.impute$trt
+  )
+  est.dr.riptw.ror.all.pool<-cbind(est.dr.riptw.ror.all.pool,est.dr.riptw.ror.all)
+  #wiptw ror
+  est.dr.wiptw.ror.all<-dr.est(prob_fit=prob_fitted_wrong,trt_ind=trt_a,main_outcome=yy,
+                               pseudo_outcome_obs=pseudo_y.obs,
+                               pseudo_outcome_comb=data.impute$pseudo_y,
+                               pseudo_trt=data.impute$trt
+  )
+  est.dr.wiptw.ror.all.pool<-cbind(est.dr.wiptw.ror.all.pool,est.dr.wiptw.ror.all)
+  
+  
+  ####################  ####################  ####################  ####################
+  
+  #fit wrong model 1
+  data.used.reg<-data.frame(x_reg[,c(2,4)],trt_a,x_reg[,c(2,4)]*trt_a)
+  names(data.used.reg)<-c("x1","x3","trt","x1trt","x3trt")
+  fit<-glm(yy~x1+x3+trt+x1trt+x3trt,family = binomial(link = "logit"),data=data.used.reg)
+  pseudo_y.obs<-predict(fit,type ="response")
+  
+  newdata.trt1<-data.frame(x_reg[,c(2,4)],1,x_reg[,c(2,4)]*1)
+  names(newdata.trt1)<-c("x1","x3","trt","x1trt","x3trt")
+  pseudo_y.trt1.wrong1<-predict(fit,newdata.trt1,type ="response")
+  
+  newdata.trt0<-data.frame(x_reg[,c(2,4)],0,x_reg[,c(2,4)]*0)
+  names(newdata.trt0)<-c("x1","x3","trt","x1trt","x3trt")
+  pseudo_y.trt0.wrong1<-predict(fit,newdata.trt0,type ="response")
+  
+  data.impute<-data.frame(pseudo_y=c(pseudo_y.trt1.wrong1,pseudo_y.trt0.wrong1),
+                          trt=c(rep(1,length(pseudo_y.trt1.wrong1)),
+                                rep(0,length(pseudo_y.trt0.wrong1))))
+  #or
+  fit<-glm(pseudo_y~trt,family = gaussian(link = "logit"),data=data.impute)
+  est.or.wrong1.all<-fit$coefficients
+  est.or.wrong1.all.pool<-cbind(est.or.wrong1.all.pool,est.or.wrong1.all)
+  
+  #dr
+  #wor riptw
+  est.dr.riptw.wor.all<-dr.est(prob_fit=prob_fitted_right,trt_ind=trt_a,main_outcome=yy,
+                               pseudo_outcome_obs=pseudo_y.obs,
+                               pseudo_outcome_comb=data.impute$pseudo_y,
+                               pseudo_trt=data.impute$trt
+  )
+  est.dr.riptw.wor.all.pool<-cbind(est.dr.riptw.wor.all.pool,est.dr.riptw.wor.all)
+  #wor wiptw
+  est.dr.wiptw.wor.all<-dr.est(prob_fit=prob_fitted_wrong,trt_ind=trt_a,main_outcome=yy,
+                               pseudo_outcome_obs=pseudo_y.obs,
+                               pseudo_outcome_comb=data.impute$pseudo_y,
+                               pseudo_trt=data.impute$trt
+  )
+  est.dr.wiptw.wor.all.pool<-cbind(est.dr.wiptw.wor.all.pool,est.dr.wiptw.wor.all)
+  
+  
+  ####################  ####################  ####################  ####################
+  
+  #fit wrong model 2
+  data.used.reg<-data.frame(x_reg[,c(3,4)],trt_a,x_reg[,c(3,4)]*trt_a)
+  names(data.used.reg)<-c("x2","x3","trt","x2trt","x3trt")
+  fit<-glm(yy~x2+x3+trt+x2trt+x3trt,family = binomial(link = "logit"),data=data.used.reg)
+  
+  newdata.trt1<-data.frame(x_reg[,c(3,4)],1,x_reg[,c(3,4)]*1)
+  names(newdata.trt1)<-c("x2","x3","trt","x2trt","x3trt")
+  pseudo_y.trt1.wrong2<-predict(fit,newdata.trt1,type ="response")
+  
+  newdata.trt0<-data.frame(x_reg[,c(3,4)],0,x_reg[,c(3,4)]*0)
+  names(newdata.trt0)<-c("x2","x3","trt","x2trt","x3trt")
+  pseudo_y.trt0.wrong2<-predict(fit,newdata.trt0,type ="response")
+  
+  data.impute<-data.frame(pseudo_y=c(pseudo_y.trt1.wrong2,pseudo_y.trt0.wrong2),
+                          trt=c(rep(1,length(pseudo_y.trt1.wrong2)),
+                                rep(0,length(pseudo_y.trt0.wrong2))))
+  
+  fit<-glm(pseudo_y~trt,family = gaussian(link = "logit"),data=data.impute)
+  est.or.wrong2.all<-fit$coefficients
+  est.or.wrong2.all.pool<-cbind(est.or.wrong2.all.pool,est.or.wrong2.all)
+  
+  ####################  ####################  ####################  ####################
+  ####################  ####################  ####################  ####################
+  
+  #######multiR and  multiR+EN estimators
+  ###all wrong models for or and iptw
+  
+  #estimating fct for or: trt group
+  est.or.fct.trt11<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt1.wrong2,trt=1)
+  est.or.fct.trt12<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt1.wrong1,trt=1)
+  #control grp
+  est.or.fct.trt01<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt0.wrong2,trt=0)
+  est.or.fct.trt02<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt0.wrong1,trt=0)
+  
+  #caclulate multiple robust propensity score with or given two wrong models for both iptw and or
+  Prop_multir_ww<-multir.propensity.or(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,
+                                       or_fit11=est.or.fct.trt11,or_fit12=est.or.fct.trt12,
+                                       or_fit01=est.or.fct.trt01,or_fit02=est.or.fct.trt02,
+                                       trt_ind=trt_a)
+  #Prop_multir<-multir.propensity(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,trt_ind=trt_a)
+  
+  #calculate multiple robust en1 casual effect
+  eta_en1_multir<-multir.ib.est(Prop_multir=Prop_multir_ww,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
+  eta_en1_multir_ww_pool<-cbind(eta_en1_multir_ww_pool,eta_en1_multir)
+  
+  #calculate multir casual effect
+  eta_multir<-multir.est(Prop_multir=Prop_multir_ww,trt_ind=trt_a,main_outcome=yy)
+  eta_multir_ww_pool<-cbind(eta_multir_ww_pool,eta_multir)
+  
+  ####################  ####################  ####################  ####################
+  
+  ####################  ####################  ####################  ####################
+  ###all wrong models for or, but one right for iptw
+  
+  #estimating fct for or: trt group
+  est.or.fct.trt11<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt1.wrong2,trt=1)
+  est.or.fct.trt12<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt1.wrong1,trt=1)
+  #control grp
+  est.or.fct.trt01<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt0.wrong2,trt=0)
+  est.or.fct.trt02<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt0.wrong1,trt=0)
+  
+  #caclulate multiple robust propensity score with or given two wrong models for both iptw and or
+  Prop_multir_rw<-multir.propensity.or(prob_fit1=prob_fitted_right,prob_fit2=prob_fitted_wrong,
+                                       or_fit11=est.or.fct.trt11,or_fit12=est.or.fct.trt12,
+                                       or_fit01=est.or.fct.trt01,or_fit02=est.or.fct.trt02,
+                                       trt_ind=trt_a)
+  #Prop_multir<-multir.propensity(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,trt_ind=trt_a)
+  
+  #calculate multiple robust en1 casual effect
+  eta_en1_multir<-multir.ib.est(Prop_multir=Prop_multir_rw,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
+  eta_en1_multir_rw_pool<-cbind(eta_en1_multir_rw_pool,eta_en1_multir)
+  
+  #calculate multir casual effect
+  eta_multir<-multir.est(Prop_multir=Prop_multir_rw,trt_ind=trt_a,main_outcome=yy)
+  eta_multir_rw_pool<-cbind(eta_multir_rw_pool,eta_multir)
+  
+  ####################  ####################  ####################  ####################
+  ###all wrong models for iptw, but one right for or
+  
+  #estimating fct for or: trt group
+  est.or.fct.trt11<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt1.wrong1,trt=1)
+  est.or.fct.trt12<-est.fct.or(eta=est.or.right.all,pseudo_y=pseudo_y.trt1.right,trt=1)
+  #control grp
+  est.or.fct.trt01<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt0.wrong1,trt=0)
+  est.or.fct.trt02<-est.fct.or(eta=est.or.right.all,pseudo_y=pseudo_y.trt0.right,trt=0)
+  
+  #caclulate multiple robust propensity score with or given one right models for both iptw and or
+  Prop_multir_wr<-multir.propensity.or(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,
+                                       or_fit11=est.or.fct.trt11,or_fit12=est.or.fct.trt12,
+                                       or_fit01=est.or.fct.trt01,or_fit02=est.or.fct.trt02,
+                                       trt_ind=trt_a)
+  #Prop_multir<-multir.propensity(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,trt_ind=trt_a)
+  
+  #calculate multiple robust en1 casual effect
+  eta_en1_multir<-multir.ib.est(Prop_multir=Prop_multir_wr,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
+  eta_en1_multir_wr_pool<-cbind(eta_en1_multir_wr_pool,eta_en1_multir)
+  
+  #calculate multir casual effect
+  eta_multir<-multir.est(Prop_multir=Prop_multir_wr,trt_ind=trt_a,main_outcome=yy)
+  eta_multir_wr_pool<-cbind(eta_multir_wr_pool,eta_multir)
+  
+  ####################  ####################  ####################  ####################
+  ###one right model for or, and one right for iptw
+  
+  #estimating fct for or: trt group
+  est.or.fct.trt11<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt1.wrong1,trt=1)
+  est.or.fct.trt12<-est.fct.or(eta=est.or.right.all,pseudo_y=pseudo_y.trt1.right,trt=1)
+  #control grp
+  est.or.fct.trt01<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt0.wrong1,trt=0)
+  est.or.fct.trt02<-est.fct.or(eta=est.or.right.all,pseudo_y=pseudo_y.trt0.right,trt=0)
+  
+  #caclulate multiple robust propensity score with or given one right models for both iptw and or
+  Prop_multir_rr<-multir.propensity.or(prob_fit1=prob_fitted_right,prob_fit2=prob_fitted_wrong,
+                                       or_fit11=est.or.fct.trt11,or_fit12=est.or.fct.trt12,
+                                       or_fit01=est.or.fct.trt01,or_fit02=est.or.fct.trt02,
+                                       trt_ind=trt_a)
+  #Prop_multir<-multir.propensity(prob_fit1=prob_fitted_wrong2,prob_fit2=prob_fitted_wrong,trt_ind=trt_a)
+  
+  #calculate multiple robust en1 casual effect
+  eta_en1_multir<-multir.ib.est(Prop_multir=Prop_multir_rr,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
+  eta_en1_multir_rr_pool<-cbind(eta_en1_multir_rr_pool,eta_en1_multir)
+  
+  #calculate multir casual effect
+  eta_multir<-multir.est(Prop_multir=Prop_multir_rr,trt_ind=trt_a,main_outcome=yy)
+  eta_multir_rr_pool<-cbind(eta_multir_rr_pool,eta_multir)
+  
+  ####################  ####################  ####################  ####################
+  
+  #construct iptw weight:right
+  eta<-iptw.binary(prob_fit=prob_fitted_right,trt_ind=trt_a,main_outcome=yy)
+  eta_iptw_right_pool<-cbind(eta_iptw_right_pool,eta)
+  #construct iptw weight:wrong1
+  eta<-iptw.binary(prob_fit=prob_fitted_wrong,trt_ind=trt_a,main_outcome=yy)
+  eta_iptw_wrong1_pool<-cbind(eta_iptw_wrong1_pool,eta)
+  #construct iptw weight:wrong2
+  eta<-iptw.binary(prob_fit=prob_fitted_wrong2,trt_ind=trt_a,main_outcome=yy)
+  eta_iptw_wrong2_pool<-cbind(eta_iptw_wrong2_pool,eta)
+  
+  print(tt)
+}
+timeend<-Sys.time()
+timeend-timestart
+
+bias_iptw_right<-(apply(eta_iptw_right_pool,1,mean)-casual_effect)[2]
+sd_iptw_right<-(apply(eta_iptw_right_pool,1,sd))[2]
+bias_iptw_wrong1<-(apply(eta_iptw_wrong1_pool,1,mean)-casual_effect)[2]
+sd_iptw_wrong1<-(apply(eta_iptw_wrong1_pool,1,sd))[2]
+bias_iptw_wrong2<-(apply(eta_iptw_wrong2_pool,1,mean)-casual_effect)[2]
+sd_iptw_wrong2<-(apply(eta_iptw_wrong2_pool,1,sd))[2]
+
+bias_or_right<-(apply(est.or.right.all.pool,1,mean)-casual_effect)[2]
+sd_or_right<-(apply(est.or.right.all.pool,1,sd))[2]
+bias_or_wrong1<-(apply(est.or.wrong1.all.pool,1,mean)-casual_effect)[2]
+sd_or_wrong1<-(apply(est.or.wrong1.all.pool,1,sd))[2]
+bias_or_wrong2<-(apply(est.or.wrong2.all.pool,1,mean)-casual_effect)[2]
+sd_or_wrong2<-(apply(est.or.wrong2.all.pool,1,sd))[2]
+
+bias_dr_riptw_ror<-(apply(est.dr.riptw.ror.all.pool,1,mean)-casual_effect)[2]
+sd_dr_riptw_ror<-(apply(est.dr.riptw.ror.all.pool,1,sd))[2]
+bias_dr_wiptw_ror<-(apply(est.dr.wiptw.ror.all.pool,1,mean)-casual_effect)[2]
+sd_dr_wiptw_ror<-(apply(est.dr.wiptw.ror.all.pool,1,sd))[2]
+bias_dr_riptw_wor<-(apply(est.dr.riptw.wor.all.pool,1,mean)-casual_effect)[2]
+sd_dr_riptw_wor<-(apply(est.dr.riptw.wor.all.pool,1,sd))[2]
+bias_dr_wiptw_wor<-(apply(est.dr.wiptw.wor.all.pool,1,mean)-casual_effect)[2]
+sd_dr_wiptw_wor<-(apply(est.dr.wiptw.wor.all.pool,1,sd))[2]
+
+bias_en1_multir_rr<-(apply(eta_en1_multir_rr_pool,1,mean)-casual_effect)[2]
+sd_en1_multir_rr<-(apply(eta_en1_multir_rr_pool,1,sd))[2]
+bias_multir_rr<-(apply(eta_multir_rr_pool,1,mean)-casual_effect)[2]
+sd_multir_rr<-(apply(eta_multir_rr_pool,1,sd))[2]
+
+bias_en1_multir_ww<-(apply(eta_en1_multir_ww_pool,1,mean)-casual_effect)[2]
+sd_en1_multir_ww<-(apply(eta_en1_multir_ww_pool,1,sd))[2]
+bias_multir_ww<-(apply(eta_multir_ww_pool,1,mean)-casual_effect)[2]
+sd_multir_ww<-(apply(eta_multir_ww_pool,1,sd))[2]
+
+bias_en1_multir_rw<-(apply(eta_en1_multir_rw_pool,1,mean)-casual_effect)[2]
+sd_en1_multir_rw<-(apply(eta_en1_multir_rw_pool,1,sd))[2]
+bias_multir_rw<-(apply(eta_multir_rw_pool,1,mean)-casual_effect)[2]
+sd_multir_rw<-(apply(eta_multir_rw_pool,1,sd))[2]
+
+bias_en1_multir_wr<-(apply(eta_en1_multir_wr_pool,1,mean)-casual_effect)[2]
+sd_en1_multir_wr<-(apply(eta_en1_multir_wr_pool,1,sd))[2]
+bias_multir_wr<-(apply(eta_multir_wr_pool,1,mean)-casual_effect)[2]
+sd_multir_wr<-(apply(eta_multir_wr_pool,1,sd))[2]
+
+#mse
+mse_iptw_right<-(sd_iptw_right^2+bias_iptw_right^2)
+mse_iptw_wrong1<-(sd_iptw_wrong1^2+bias_iptw_wrong1^2)
+mse_iptw_wrong2<-(sd_iptw_wrong2^2+bias_iptw_wrong2^2)
+
+mse_or_right<-(sd_or_right^2+bias_or_right^2)
+mse_or_wrong1<-(sd_or_wrong1^2+bias_or_wrong1^2)
+mse_or_wrong2<-(sd_or_wrong2^2+bias_or_wrong2^2)
+
+mse_dr_riptw_ror<-(sd_dr_riptw_ror^2+bias_dr_riptw_ror^2)
+mse_dr_wiptw_ror<-(sd_dr_wiptw_ror^2+bias_dr_wiptw_ror^2)
+mse_dr_riptw_wor<-(sd_dr_riptw_wor^2+bias_dr_riptw_wor^2)
+mse_dr_wiptw_wor<-(sd_dr_wiptw_wor^2+bias_dr_wiptw_wor^2)
+
+mse_multir_rr<-(sd_multir_rr^2+bias_multir_rr^2)
+mse_multir_en1_rr<-(sd_en1_multir_rr^2+bias_en1_multir_rr^2)
+mse_multir_rw<-(sd_multir_rw^2+bias_multir_rw^2)
+mse_multir_en1_rw<-(sd_en1_multir_rw^2+bias_en1_multir_rw^2)
+mse_multir_wr<-(sd_multir_wr^2+bias_multir_wr^2)
+mse_multir_en1_wr<-(sd_en1_multir_wr^2+bias_en1_multir_wr^2)
+mse_multir_ww<-(sd_multir_ww^2+bias_multir_ww^2)
+mse_multir_en1_ww<-(sd_en1_multir_ww^2+bias_en1_multir_ww^2)
+
+output<-cbind(Bias=100*c(bias_iptw_right,
+                         bias_iptw_wrong1,
+                         bias_iptw_wrong2,
+                         bias_or_right,
+                         bias_or_wrong1,
+                         bias_or_wrong2,
+                         bias_dr_riptw_ror,
+                         bias_dr_wiptw_ror,
+                         bias_dr_riptw_wor,
+                         bias_dr_wiptw_wor,
+                         bias_multir_rr,
+                         bias_en1_multir_rr,
+                         bias_multir_ww,
+                         bias_en1_multir_ww,
+                         bias_multir_rw,
+                         bias_en1_multir_rw,
+                         bias_multir_wr,
+                         bias_en1_multir_wr),
+              Var=100*c(sd_iptw_right^2,
+                        sd_iptw_wrong1^2,
+                        sd_iptw_wrong2^2,
+                        sd_or_right^2,
+                        sd_or_wrong1^2,
+                        sd_or_wrong2^2,
+                        sd_dr_riptw_ror^2,
+                        sd_dr_wiptw_ror^2,
+                        sd_dr_riptw_wor^2,
+                        sd_dr_wiptw_wor^2,
+                        sd_multir_rr^2,
+                        sd_en1_multir_rr^2,
+                        sd_multir_ww^2,
+                        sd_en1_multir_ww^2,
+                        sd_multir_rw^2,
+                        sd_en1_multir_rw^2,
+                        sd_multir_wr^2,
+                        sd_en1_multir_wr^2),
+              MSE=100*c(mse_iptw_right,
+                        mse_iptw_wrong1,
+                        mse_iptw_wrong2,
+                        mse_or_right,
+                        mse_or_wrong1,
+                        mse_or_wrong2,
+                        mse_dr_riptw_ror,
+                        mse_dr_wiptw_ror,
+                        mse_dr_riptw_wor,
+                        mse_dr_wiptw_wor,
+                        mse_multir_rr,
+                        mse_multir_en1_rr,
+                        mse_multir_ww,
+                        mse_multir_en1_ww,
+                        mse_multir_rw,
+                        mse_multir_en1_rw,
+                        mse_multir_wr,
+                        mse_multir_en1_wr))
+rownames(output)<-c("iptw.right","iptw.wrong1","iptw.wrong2","or.right","or.wrong1","or.wrong2", 
+                    "dr.riptw.ror","dr.wiptw.ror","dr.riptw.wor","dr.wiptw.wor",
+                    "multir_rr","multir.en_rr","multir_ww","multir.en_ww",
+                    "multir_rw","multir.en_rw","multir_wr","multir.en_wr")
+output
+
+#emprical relative efficiency between multir vs en-multir
+(sd_multir_ww^2+bias_multir_ww^2)/(sd_en1_multir_ww^2+bias_en1_multir_ww^2)
+
+#emprical relative efficiency between multir vs en-multir
+#(sd_iptw^2+bias_iptw^2)/(sd_en1_multir^2+bias_en1_multir^2)
+
+
+
