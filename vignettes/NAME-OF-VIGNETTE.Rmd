@@ -41,7 +41,7 @@ readRDSFromWeb <- function(ref) {
 # Simulate the data
 The basic setups
 ```{r,message=FALSE}
-n=10000 
+n=10000 # sample size; change to a smaller value
 proportion<-1 # proportion of having secondary outcomes
 correlation<-0.4 #correlation among secondary outcomes
 variance<-1 #residual variance
@@ -112,7 +112,7 @@ set.seed(1234567)
 
 # Compare different methods in terms of estimation bias
 
-We provide the following codes to calculate the eMultiR estimate without information borrow from the secondary outcomes given two candidate models for the propensity scores (PS) and conditional means (CM), none of which are correctly specified. To prepare the estimation, we need to fit the PS models and CM models first. Consider the following three PS models: the right model, wrong model1, and wrong model2.
+We provide the following codes to calculate the eMultiR estimate without information borrow from the secondary outcomes given two candidate models for the propensity scores (PS) and conditional means (CM), none of which are correctly specified. To prepare the estimation, we need to fit the PS models and CM models first. Consider the following three PS models: the right model, wrong model1, and wrong model2. The following code requires substantial running time due to sample size of 10000, in order to stabilize the estimation. The user can directly run the code in the session of `Read estimate results directly` to visualize the estimation bias. The user can also make the sample size `n` smaller, such as n=300.   
 
 ## The model based on IPTW method
 ```{r,message=FALSE,eval=FALSE}
@@ -285,6 +285,11 @@ names(est_all)<-c("eMultiR_ww","MultiR_ww","DR_ww",
 saveRDS(est_all,"/Users/chixiang.chen/Library/CloudStorage/OneDrive-UniversityofMarylandSchoolofMedicine/research_mingwang/causal/package_results/est_all.rds")
 ```
 
+## Read estimate results directly
+The user can skip the above codes and run the following codes to visualize the results. It can be seen below that the eMultiR estimates with/without information borrow show much less estimation bias compared to other estimates Note that when the PS or CM model is right, then IPTW_r and CM_r estimates have small bias, whereas when the PS or CM models are wrong, existing estimates have large bias. The eMultiR estimates are still satisfactory even if all candidate models are wrong.
+
+Note that the result relies the data from only one simulation. More rigorous evaluation should be done by multiple simulation runs (eg., 100 runs).
+
 ```{r,message=FALSE}
 est_all<-readRDSFromWeb("https://github.com/chencxxy28/eMultiR/raw/main/vignettes/data/est_all.rds")
 data.bar<-data.frame(Bias=abs(round(est_all-casual_effect,3)),
@@ -295,6 +300,7 @@ p<-ggplot(data=data.bar, aes(x=Method, y=Bias)) +
    theme(axis.text.x=element_text(angle=30,hjust=1,vjust=0.5))
 p
 ```
+
 
 
 # Calculate the bootstrapping estimation standard deviation for the eMultiR estimate
