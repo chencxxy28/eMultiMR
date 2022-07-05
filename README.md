@@ -1,5 +1,7 @@
 # eMultiR: Estimation of causal treatment effect on a binary outcome with multiple robustness and integrated information from secondary outcomes
-
+  <!-- badges: start -->
+  [![R-CMD-check](https://github.com/chencxxy28/eMultiR/workflows/R-CMD-check/badge.svg)](https://github.com/chencxxy28/eMultiR/actions)
+  <!-- badges: end -->
 
 ![](man/figures/workflow.png)
 
