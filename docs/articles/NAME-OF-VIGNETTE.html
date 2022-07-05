@@ -58,7 +58,14 @@
   </ul>
 </li>
       </ul>
-<ul class="nav navbar-nav navbar-right"></ul>
+<ul class="nav navbar-nav navbar-right">
+<li>
+  <a href="https://github.com/chencxxy28/eMultiR/" class="external-link">
+    <span class="fab fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
 </div>
 <!--/.nav-collapse -->
   </div>
@@ -74,7 +81,7 @@
       <h1 data-toc-skip>Tutorial</h1>
             
       
-      
+      <small class="dont-index">Source: <a href="https://github.com/chencxxy28/eMultiR/blob/HEAD/vignettes/NAME-OF-VIGNETTE.Rmd" class="external-link"><code>vignettes/NAME-OF-VIGNETTE.Rmd</code></a></small>
       <div class="hidden name"><code>NAME-OF-VIGNETTE.Rmd</code></div>
 
     </div>
@@ -109,7 +116,7 @@ state-of-the-art methods (e.g., doubly robust estimators).</p>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bindata</span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">geepack</span><span class="op">)</span> 
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">eMultiR</span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chencxxy28/eMultiR" class="external-link">eMultiR</a></span><span class="op">)</span>
 <span class="va">readRDSFromWeb</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">ref</span><span class="op">)</span> <span class="op">{</span>
   <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/gzcon.html" class="external-link">gzcon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">url</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 <span class="op">}</span></code></pre></div>
@@ -313,7 +320,7 @@ model1, and wrong model2</p>
 <span class="va">est_cm</span><span class="op">[</span><span class="fl">2</span>,<span class="op">]</span><span class="op">-</span><span class="va">casual_effect</span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="the-dr-estimate-with-all-wrong-model">The DR estimate with all wrong model<a class="anchor" aria-label="anchor" href="#the-dr-estimate-with-all-wrong-model"></a>
+<h2 id="the-dr-estimate-with-all-wrong-candidate-models">The DR estimate with all wrong candidate models<a class="anchor" aria-label="anchor" href="#the-dr-estimate-with-all-wrong-candidate-models"></a>
 </h2>
 <p>Run the function <code><a href="../reference/dr.est.html">dr.est()</a></code> to obtain the DR estimate by
 considering the PS wrong model1 and CM wrong model1.</p>
@@ -407,6 +414,15 @@ runs).</p>
 <h1 id="calculate-the-bootstrapping-estimation-standard-deviation-for-the-emultir-estimate">Calculate the bootstrapping estimation standard deviation for the
 eMultiR estimate<a class="anchor" aria-label="anchor" href="#calculate-the-bootstrapping-estimation-standard-deviation-for-the-emultir-estimate"></a>
 </h1>
+<p>We also provide a function <code>boostrap.multir.plus.en.se()</code>
+for calculating the bootstrapping standard deviation. However, the
+function should be changed as well if the candidate models are changed.
+The user are suggested to write their own codes for bootstrapping in
+practice. The function here provides a basic guidance. The following
+code will take a long time to run.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">r</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>
+<span class="va">bsd</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/bootstrap.multir.plus.en.se.html">bootstrap.multir.plus.en.se</a></span><span class="op">(</span><span class="va">y</span>,<span class="va">x</span>,<span class="va">trt_a</span>,<span class="va">yy</span>,<span class="va">x_reg</span>,<span class="va">r</span>,<span class="va">time</span>,<span class="va">proportion</span>,<span class="va">id</span>,<span class="va">dist</span>,num.boost<span class="op">=</span><span class="fl">50</span><span class="op">)</span></code></pre></div>
 </div>
   </div>
 
