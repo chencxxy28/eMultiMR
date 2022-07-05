@@ -1,0 +1,7 @@
+---
+title: "Data download"
+output: html_document
+date: '2022-07-05'
+---
+
+* [est_all](https://github.com/chencxxy28/eMultiR/raw/main/vignettes/data/est_all.rds)
