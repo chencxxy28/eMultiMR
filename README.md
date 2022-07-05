@@ -18,5 +18,5 @@ devtools::install_github("chencxxy28/eMultiR")
 
 # Vignettes
 
-Please visit [Tutorial](https://chencxxy28.github.io/eMultiR/index.html)
+Please visit [Tutorial](https://chencxxy28.github.io/eMultiR/articles/NAME-OF-VIGNETTE.html)
 
