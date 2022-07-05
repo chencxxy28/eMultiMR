@@ -286,7 +286,7 @@ saveRDS(est_all,"/Users/chixiang.chen/Library/CloudStorage/OneDrive-Universityof
 ```
 
 ```{r,message=FALSE}
-est_all<-readRDS("/Users/chixiang.chen/Library/CloudStorage/OneDrive-UniversityofMarylandSchoolofMedicine/research_mingwang/causal/package_results/est_all.rds")
+est_all<-readRDSFromWeb("https://github.com/chencxxy28/eMultiR/raw/main/vignettes/data/est_all.rds")
 data.bar<-data.frame(Bias=abs(round(est_all-casual_effect,3)),
                      Method=names(est_all))
 p<-ggplot(data=data.bar, aes(x=Method, y=Bias)) +
