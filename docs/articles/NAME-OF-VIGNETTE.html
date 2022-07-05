@@ -119,7 +119,7 @@ state-of-the-art methods (e.g., doubly robust estimators).</p>
 </h1>
 <p>The basic setups</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">n</span><span class="op">=</span><span class="fl">10000</span> 
+<code class="sourceCode R"><span class="va">n</span><span class="op">=</span><span class="fl">10000</span> <span class="co"># sample size; change to a smaller value</span>
 <span class="va">proportion</span><span class="op">&lt;-</span><span class="fl">1</span> <span class="co"># proportion of having secondary outcomes</span>
 <span class="va">correlation</span><span class="op">&lt;-</span><span class="fl">0.4</span> <span class="co">#correlation among secondary outcomes</span>
 <span class="va">variance</span><span class="op">&lt;-</span><span class="fl">1</span> <span class="co">#residual variance</span>
@@ -193,7 +193,12 @@ without information borrow from the secondary outcomes given two
 candidate models for the propensity scores (PS) and conditional means
 (CM), none of which are correctly specified. To prepare the estimation,
 we need to fit the PS models and CM models first. Consider the following
-three PS models: the right model, wrong model1, and wrong model2.</p>
+three PS models: the right model, wrong model1, and wrong model2. The
+following code requires substantial running time due to sample size of
+10000, in order to stabilize the estimation. The user can directly run
+the code in the session of <code>Read estimate results directly</code>
+to visualize the estimation bias. The user can also make the sample size
+<code>n</code> smaller, such as n=300.</p>
 <div class="section level2">
 <h2 id="the-model-based-on-iptw-method">The model based on IPTW method<a class="anchor" aria-label="anchor" href="#the-model-based-on-iptw-method"></a>
 </h2>
@@ -364,6 +369,21 @@ secondary outcomes<a class="anchor" aria-label="anchor" href="#the-model-based-o
                   <span class="st">"CM_r"</span>,<span class="st">"CM_w1"</span>,<span class="st">"CM_w2"</span>,
                   <span class="st">"IPTW_r"</span>,<span class="st">"IPTW_w1"</span>,<span class="st">"IPTW_w2"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">est_all</span>,<span class="st">"/Users/chixiang.chen/Library/CloudStorage/OneDrive-UniversityofMarylandSchoolofMedicine/research_mingwang/causal/package_results/est_all.rds"</span><span class="op">)</span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="read-estimate-results-directly">Read estimate results directly<a class="anchor" aria-label="anchor" href="#read-estimate-results-directly"></a>
+</h2>
+<p>The user can skip the above codes and run the following codes to
+visualize the results. It can be seen below that the eMultiR estimates
+with/without information borrow show much less estimation bias compared
+to other estimates Note that when the PS or CM model is right, then
+IPTW_r and CM_r estimates have small bias, whereas when the PS or CM
+models are wrong, existing estimates have large bias. The eMultiR
+estimates are still satisfactory even if all candidate models are
+wrong.</p>
+<p>Note that the result relies the data from only one simulation. More
+rigorous evaluation should be done by multiple simulation runs (eg., 100
+runs).</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">est_all</span><span class="op">&lt;-</span><span class="fu">readRDSFromWeb</span><span class="op">(</span><span class="st">"https://github.com/chencxxy28/eMultiR/raw/main/vignettes/data/est_all.rds"</span><span class="op">)</span>
 <span class="va">data.bar</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Bias<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">est_all</span><span class="op">-</span><span class="va">casual_effect</span>,<span class="fl">3</span><span class="op">)</span><span class="op">)</span>,
