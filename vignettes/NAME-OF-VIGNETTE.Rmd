@@ -22,7 +22,7 @@ if (!require("devtools")) {
 devtools::install_github("chencxxy28/eMultiR")
 ```
 
-load necessary packages for this tutorial
+Load necessary packages for this tutorial
 ```{r,message=FALSE}
 library(psych)
 library(survival)
@@ -133,7 +133,7 @@ We provide the following codes to calculate the eMultiR estimate without informa
   prob_fitted_wrong2<-fitted(fit)
 ```
 
-Given the above model, run the codes to obtain the IPTW estimates due to different candidate models
+Given the above model, run the function `iptw.binary()` to obtain the IPTW estimates due to different candidate models
 ```{r,message=FALSE,eval=FALSE}
 #conventional iptw
 eta_iptw<-rep()
@@ -178,7 +178,9 @@ Consider the following three CM models: the right model, wrong model1, and wrong
   fit<-glm(pseudo_y~trt,family = gaussian(link = "logit"),data=data.impute)
   est.or.right.all<-fit$coefficients
   #est.or.right.all.pool<-cbind(est.or.right.all.pool,est.or.right.all)
+```
 
+```{r,message=FALSE,eval=FALSE}
 #fit wrong model 2
   data.used.reg<-data.frame(x_reg[,c(3,4)],trt_a,x_reg[,c(3,4)]*trt_a)
   names(data.used.reg)<-c("x2","x3","trt","x2trt","x3trt")
@@ -199,8 +201,9 @@ Consider the following three CM models: the right model, wrong model1, and wrong
   fit<-glm(pseudo_y~trt,family = gaussian(link = "logit"),data=data.impute)
   est.or.wrong2.all<-fit$coefficients
   #est.or.wrong2.all.pool<-cbind(est.or.wrong2.all.pool,est.or.wrong2.all)
-  
-  
+```
+
+```{r,message=FALSE,eval=FALSE}
 #fit wrong model 1
   data.used.reg<-data.frame(x_reg[,c(2,4)],trt_a,x_reg[,c(2,4)]*trt_a)
   names(data.used.reg)<-c("x1","x3","trt","x1trt","x3trt")
@@ -230,7 +233,8 @@ est_cm<-cbind(est.or.right.all,est.or.wrong1.all,est.or.wrong2.all)
 est_cm[2,]-casual_effect
 ```
 
-## The DR estimate with all wrong model
+## The DR estimate with all wrong candidate models
+Run the function `dr.est()` to obtain the DR estimate by considering the PS wrong model1 and CM wrong model1.
 ```{r,message=FALSE,eval=FALSE}
 #dr estimation
 #wor wiptw
@@ -241,36 +245,38 @@ est.dr.ww[2]-casual_effect
 ```
 
 ## The model based on eMultiR method without information borrow from the secondary outcomes
-For the MultiR estimate, we consider two wrong PS models and two wrong CM models.
+For the MultiR estimate, we consider two wrong PS models and two wrong CM models. First, run the function `est.fct.or()` to obtain the estimating function from the CM method.
 ```{r,message=FALSE,eval=FALSE}
-
  #estimating fct for or: trt group
   est.or.fct.trt11<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt1.wrong2,trt=1,n=n)
   est.or.fct.trt12<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt1.wrong1,trt=1,n=n)
  #estimating fct for or:control grp
   est.or.fct.trt01<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt0.wrong2,trt=0,n=n)
   est.or.fct.trt02<-est.fct.or(eta=est.or.wrong1.all,pseudo_y=pseudo_y.trt0.wrong1,trt=0,n=n)
+```
 
-  
+Run the function `multir.propensity.or()` to obtain the calibration scores
+```{r,message=FALSE,eval=FALSE}  
 #calculate multiple robust propensity score with or given one right models for both iptw and or
+Prop_multir_ww<-multir.propensity.or(prob_fit1=prob_fitted_wrong2, prob_fit2=prob_fitted_wrong, or_fit11=est.or.fct.trt11, or_fit12=est.or.fct.trt12, or_fit01=est.or.fct.trt01, or_fit02=est.or.fct.trt02, trt_ind=trt_a)
+```
 
-  Prop_multir_ww<-multir.propensity.or(prob_fit1=prob_fitted_wrong2, prob_fit2=prob_fitted_wrong, or_fit11=est.or.fct.trt11, or_fit12=est.or.fct.trt12, or_fit01=est.or.fct.trt01, or_fit02=est.or.fct.trt02, trt_ind=trt_a)
-
+Run the function `multir.est()` to obtain the MultiR estimate
+```{r,message=FALSE,eval=FALSE}  
   eta_multir_ww<-multir.est(Prop_multir=Prop_multir_ww,trt_ind=trt_a,main_outcome=yy)
   eta_multir_ww[2]-casual_effect
 ```
 
 ## The model based on eMultiR method with information borrow from the secondary outcomes
-
+Run the function `MinBo.one()` to obtain the scores of information borrow
 ```{r,message=FALSE,eval=FALSE}
-
   #MinBo: one secondary outcome situation
   r<-rep(1,nrow(x))
   Prop_scores<-MinBo.one(s.outcome=y,cov.mat=x,n=n,proportion=proportion,time=time,r=r,id=id,dist="gaussian")
   summary(Prop_scores)
 ```
 
-Calculate the estimate bias
+Run the function `multir.ib.est()` to obtain the eMultiR estimate with information borrow
 ```{r,message=FALSE,eval=FALSE}
 eta_emultir_ww<-multir.ib.est(Prop_multir=Prop_multir_ww,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
 eta_emultir_ww[2]-casual_effect
@@ -302,6 +308,11 @@ p
 ```
 
 
-
 # Calculate the bootstrapping estimation standard deviation for the eMultiR estimate
+We also provide a function `boostrap.multir.plus.en.se()` for calculating the bootstrapping standard deviation. However, the function should be changed as well if the candidate models are changed. The user are suggested to write their own codes for bootstrapping in practice. The function here provides a basic guidance. The following code will take a long time to run.
+
+```{r,message=FALSE,eval=FALSE}
+r<-rep(1,nrow(x))
+bsd<-bootstrap.multir.plus.en.se(y,x,trt_a,yy,x_reg,r,time,proportion,id,dist,num.boost=50)
+```
 
