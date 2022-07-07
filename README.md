@@ -22,7 +22,7 @@ devtools::install_github("chencxxy28/eMultiR")
 
 Please visit [Tutorial](https://chencxxy28.github.io/eMultiR/articles/NAME-OF-VIGNETTE.html)
 
-# Relevent reference
+# Relevant reference
 [Information borrow](https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.9252): Integration of information from the secondary outcome to enhance the estimation efficiency in the main analysis based on GLM.
 
 [Multiply robust estimate](https://academic.oup.com/biomet/article-abstract/100/2/417/202879): The multiply robust estimate for the mean in the presence of missing data. 
