@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-**eMultiR** is a multiply robust framework for estimation of causal effect under the setting with a binary outcome, where multiple propensity score models and conditional mean imputation models are used to ensure estimation robustness. Moreover, **eMultiR** reduces estimation variability by incorporating secondary outcomes that are highly correlated with the primary binary outcome. The resulting estimates are less sensitive to model mis-specification compared to that based on the existing state-of-the-art methods (e.g., doubly robust estimators).
+**eMultiMR** is a multiply robust framework for estimation of causal effect under the setting with a binary outcome, where multiple propensity score models and conditional mean imputation models are used to ensure estimation robustness. Moreover, **eMultiMR** reduces estimation variability by incorporating secondary outcomes that are highly correlated with the primary binary outcome. The resulting estimates are less sensitive to model mis-specification compared to that based on the existing state-of-the-art methods (e.g., doubly robust estimators).
 
 # Installation the package
 To begin with, the user need to install our packages
@@ -19,7 +19,7 @@ To begin with, the user need to install our packages
 if (!require("devtools")) {
   install.packages("devtools")
 }
-devtools::install_github("chencxxy28/eMultiR")
+devtools::install_github("chencxxy28/eMultiMR")
 ```
 
 Load necessary packages for this tutorial
