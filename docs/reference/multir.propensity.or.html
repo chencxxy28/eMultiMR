@@ -26,7 +26,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -63,30 +63,45 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">multir.propensity.or</span><span class="op">(</span><span class="va">prob_fit1</span>, <span class="va">prob_fit2</span>,<span class="va">or_fit11</span>, <span class="va">or_fit12</span>,
-<span class="va">or_fit01</span>,<span class="va">or_fit02</span>, <span class="va">trt_ind</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">multir.propensity.or</span><span class="op">(</span><span class="va">prob_fit1</span>, <span class="va">prob_fit2</span>,<span class="va">or_fit11</span>, <span class="va">or_fit12</span>,</span>
+<span><span class="va">or_fit01</span>,<span class="va">or_fit02</span>, <span class="va">trt_ind</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>prob_fit1</dt>
 <dd><p>The fitted probability in the treatment assignment model1</p></dd>
+
+
 <dt>prob_fit2</dt>
 <dd><p>The fitted probability in the treatment assignment model2</p></dd>
+
+
 <dt>or_fit11</dt>
 <dd><p>The estimating function for the CM model 1 for the treatment group</p></dd>
+
+
 <dt>or_fit12</dt>
 <dd><p>The estimating function for the CM model 2 for the treatment group</p></dd>
+
+
 <dt>or_fit01</dt>
 <dd><p>The estimating function for the CM model 1 for the control group</p></dd>
+
+
 <dt>or_fit02</dt>
 <dd><p>The estimating function for the CM model 2 for the control group</p></dd>
+
+
 <dt>trt_ind</dt>
 <dd><p>Treatment assignment (eg., 0,1)</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A vector of calibration scores</p>
+    
+
+<p>A vector of calibration scores</p>
     </div>
 
   </div>
@@ -101,8 +116,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
-2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

@@ -26,7 +26,7 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -63,32 +63,49 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">MinBo.one</span><span class="op">(</span><span class="va">s.outcome</span>,<span class="va">cov.mat</span>,<span class="va">n</span>,<span class="va">proportion</span>,<span class="va">time</span>,<span class="va">r</span>,<span class="va">id</span>,dist<span class="op">=</span><span class="st">"gaussian"</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">MinBo.one</span><span class="op">(</span><span class="va">s.outcome</span>,<span class="va">cov.mat</span>,<span class="va">n</span>,<span class="va">proportion</span>,<span class="va">time</span>,<span class="va">r</span>,<span class="va">id</span>,dist<span class="op">=</span><span class="st">"gaussian"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>s.outcome</dt>
 <dd><p>The vector of secondary outcomes</p></dd>
+
+
 <dt>cov.mat</dt>
 <dd><p>The covariate matrix</p></dd>
+
+
 <dt>n</dt>
 <dd><p>The sample size</p></dd>
+
+
 <dt>proportion</dt>
 <dd><p>The proportion of the subjects having the secondary outcome
 (so far only allow the value one)</p></dd>
+
+
 <dt>time</dt>
 <dd><p>The number of visits</p></dd>
+
+
 <dt>r</dt>
 <dd><p>Missing indicator for subjects</p></dd>
+
+
 <dt>id</dt>
 <dd><p>The id of subjects</p></dd>
+
+
 <dt>dist</dt>
 <dd><p>The distribution of the secondary outcomes (so far only allow "gaussian")</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A vector of information borrow scores</p>
+    
+
+<p>A vector of information borrow scores</p>
     </div>
 
   </div>
@@ -103,8 +120,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a>
-2.0.1.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

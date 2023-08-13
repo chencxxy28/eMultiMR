@@ -12,7 +12,7 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 URL: https://github.com/chencxxy28/eMultiR
 Imports: MASS,rootSolve, psych, survival, mvtnorm, bindata, geepack, ggplot2
 Depends: R (>= 3.5.0)
