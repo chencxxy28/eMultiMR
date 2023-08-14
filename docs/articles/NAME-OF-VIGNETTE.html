@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tutorial • eMultiR</title>
+<title>Tutorial • eMultiMR</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Tutorial">
-<meta property="og:description" content="eMultiR">
+<meta property="og:description" content="eMultiMR">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -32,7 +32,7 @@
         <span class="icon-bar"></span>
       </button>
       <span class="navbar-brand">
-        <a class="navbar-link" href="../index.html">eMultiR</a>
+        <a class="navbar-link" href="../index.html">eMultiMR</a>
         <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
       </span>
     </div>
@@ -88,7 +88,7 @@
 
     
     
-<p><strong>eMultiMR</strong> is a multiply robust framework for
+<p><strong>eMultiMR</strong> is a multipe-model-based framework for
 estimation of causal effect under the setting with a binary outcome,
 where multiple propensity score models and conditional mean imputation
 models are used to ensure estimation robustness. Moreover,
@@ -116,7 +116,7 @@ state-of-the-art methods (e.g., doubly robust estimators).</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">bindata</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">geepack</span><span class="op">)</span> </span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chencxxy28/eMultiR" class="external-link">eMultiR</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chencxxy28/eMultiR" class="external-link">eMultiMR</a></span><span class="op">)</span></span>
 <span><span class="va">readRDSFromWeb</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">ref</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/gzcon.html" class="external-link">gzcon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">url</a></span><span class="op">(</span><span class="va">ref</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
@@ -195,7 +195,7 @@ state-of-the-art methods (e.g., doubly robust estimators).</p>
 <div class="section level2">
 <h2 id="compare-different-methods-in-terms-of-estimation-bias">Compare different methods in terms of estimation bias<a class="anchor" aria-label="anchor" href="#compare-different-methods-in-terms-of-estimation-bias"></a>
 </h2>
-<p>We provide the following codes to calculate the eMultiR estimate
+<p>We provide the following codes to calculate the eMultiMR estimate
 without information borrow from the secondary outcomes given two
 candidate models for the propensity scores (PS) and conditional means
 (CM), none of which are correctly specified. To prepare the estimation,
@@ -333,10 +333,10 @@ considering the PS wrong model1 and CM wrong model1.</p>
 <span><span class="va">est.dr.ww</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">-</span><span class="va">casual_effect</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="the-model-based-on-emultir-method-without-information-borrow-from-the-secondary-outcomes">The model based on eMultiR method without information borrow from
-the secondary outcomes<a class="anchor" aria-label="anchor" href="#the-model-based-on-emultir-method-without-information-borrow-from-the-secondary-outcomes"></a>
+<h3 id="the-model-based-on-emultimr-method-without-information-borrow-from-the-secondary-outcomes">The model based on eMultiMR method without information borrow from
+the secondary outcomes<a class="anchor" aria-label="anchor" href="#the-model-based-on-emultimr-method-without-information-borrow-from-the-secondary-outcomes"></a>
 </h3>
-<p>For the MultiR estimate, we consider two wrong PS models and two
+<p>For the MultiMR estimate, we consider two wrong PS models and two
 wrong CM models. First, run the function <code><a href="../reference/est.fct.or.html">est.fct.or()</a></code> to
 obtain the estimating function from the CM method.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
@@ -351,15 +351,15 @@ calibration scores</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#calculate multiple robust propensity score with or given one right models for both iptw and or</span></span>
 <span><span class="va">Prop_multir_ww</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/multir.propensity.or.html">multir.propensity.or</a></span><span class="op">(</span>prob_fit1<span class="op">=</span><span class="va">prob_fitted_wrong2</span>, prob_fit2<span class="op">=</span><span class="va">prob_fitted_wrong</span>, or_fit11<span class="op">=</span><span class="va">est.or.fct.trt11</span>, or_fit12<span class="op">=</span><span class="va">est.or.fct.trt12</span>, or_fit01<span class="op">=</span><span class="va">est.or.fct.trt01</span>, or_fit02<span class="op">=</span><span class="va">est.or.fct.trt02</span>, trt_ind<span class="op">=</span><span class="va">trt_a</span><span class="op">)</span></span></code></pre></div>
-<p>Run the function <code><a href="../reference/multir.est.html">multir.est()</a></code> to obtain the MultiR
+<p>Run the function <code><a href="../reference/multir.est.html">multir.est()</a></code> to obtain the MultiMR
 estimate</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span>  <span class="va">eta_multir_ww</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/multir.est.html">multir.est</a></span><span class="op">(</span>Prop_multir<span class="op">=</span><span class="va">Prop_multir_ww</span>,trt_ind<span class="op">=</span><span class="va">trt_a</span>,main_outcome<span class="op">=</span><span class="va">yy</span><span class="op">)</span></span>
 <span>  <span class="va">eta_multir_ww</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">-</span><span class="va">casual_effect</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="the-model-based-on-emultir-method-with-information-borrow-from-the-secondary-outcomes">The model based on eMultiR method with information borrow from the
-secondary outcomes<a class="anchor" aria-label="anchor" href="#the-model-based-on-emultir-method-with-information-borrow-from-the-secondary-outcomes"></a>
+<h3 id="the-model-based-on-emultimr-method-with-information-borrow-from-the-secondary-outcomes">The model based on eMultiMR method with information borrow from the
+secondary outcomes<a class="anchor" aria-label="anchor" href="#the-model-based-on-emultimr-method-with-information-borrow-from-the-secondary-outcomes"></a>
 </h3>
 <p>Run the function <code><a href="../reference/MinBo.one.html">MinBo.one()</a></code> to obtain the scores of
 information borrow</p>
@@ -368,7 +368,7 @@ information borrow</p>
 <span>  <span class="va">r</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">Prop_scores</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/MinBo.one.html">MinBo.one</a></span><span class="op">(</span>s.outcome<span class="op">=</span><span class="va">y</span>,cov.mat<span class="op">=</span><span class="va">x</span>,n<span class="op">=</span><span class="va">n</span>,proportion<span class="op">=</span><span class="va">proportion</span>,time<span class="op">=</span><span class="va">time</span>,r<span class="op">=</span><span class="va">r</span>,id<span class="op">=</span><span class="va">id</span>,dist<span class="op">=</span><span class="st">"gaussian"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">Prop_scores</span><span class="op">)</span></span></code></pre></div>
-<p>Run the function <code><a href="../reference/multir.ib.est.html">multir.ib.est()</a></code> to obtain the eMultiR
+<p>Run the function <code><a href="../reference/multir.ib.est.html">multir.ib.est()</a></code> to obtain the eMultiMR
 estimate with information borrow</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">eta_emultir_ww</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/multir.ib.est.html">multir.ib.est</a></span><span class="op">(</span>Prop_multir<span class="op">=</span><span class="va">Prop_multir_ww</span>,Prop_scores<span class="op">=</span><span class="va">Prop_scores</span>,trt_ind<span class="op">=</span><span class="va">trt_a</span>,main_outcome<span class="op">=</span><span class="va">yy</span><span class="op">)</span></span>
@@ -379,7 +379,7 @@ estimate with information borrow</p>
 </h3>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">est_all</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">eta_emultir_ww</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,<span class="va">eta_multir_ww</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,<span class="va">est.dr.ww</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>,<span class="va">est_cm</span><span class="op">[</span><span class="fl">2</span>,<span class="op">]</span>,<span class="va">eta_iptw</span><span class="op">[</span><span class="fl">2</span>,<span class="op">]</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">est_all</span><span class="op">)</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"eMultiR_ww"</span>,<span class="st">"MultiR_ww"</span>,<span class="st">"DR_ww"</span>,</span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">est_all</span><span class="op">)</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"eMultiMR_ww"</span>,<span class="st">"MultiMR_ww"</span>,<span class="st">"DR_ww"</span>,</span>
 <span>                  <span class="st">"CM_r"</span>,<span class="st">"CM_w1"</span>,<span class="st">"CM_w2"</span>,</span>
 <span>                  <span class="st">"IPTW_r"</span>,<span class="st">"IPTW_w1"</span>,<span class="st">"IPTW_w2"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">est_all</span>,<span class="st">"/Users/chixiang.chen/Library/CloudStorage/OneDrive-UniversityofMarylandSchoolofMedicine/research_mingwang/causal/package_results/est_all.rds"</span><span class="op">)</span></span></code></pre></div>
@@ -388,18 +388,18 @@ estimate with information borrow</p>
 <h3 id="read-estimate-results-directly">Read estimate results directly<a class="anchor" aria-label="anchor" href="#read-estimate-results-directly"></a>
 </h3>
 <p>The user can skip the above codes and run the following codes to
-visualize the results. It can be seen below that the eMultiR estimates
+visualize the results. It can be seen below that the eMultiMR estimates
 with/without information borrow show much less estimation bias compared
 to other estimates Note that when the PS or CM model is right, then
 IPTW_r and CM_r estimates have small bias, whereas when the PS or CM
-models are wrong, existing estimates have large bias. The eMultiR
+models are wrong, existing estimates have large bias. The eMultiMR
 estimates are still satisfactory even if all candidate models are
 wrong.</p>
 <p>Note that the result relies the data from only one simulation. More
 rigorous evaluation should be done by multiple simulation runs (eg., 100
 runs).</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">est_all</span><span class="op">&lt;-</span><span class="fu">readRDSFromWeb</span><span class="op">(</span><span class="st">"https://github.com/chencxxy28/eMultiR/raw/main/vignettes/data/est_all.rds"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">est_all</span><span class="op">&lt;-</span><span class="fu">readRDSFromWeb</span><span class="op">(</span><span class="st">"https://github.com/chencxxy28/eMultiMR/raw/main/vignettes/data/est_all.rds"</span><span class="op">)</span></span>
 <span><span class="va">data.bar</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Bias<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">est_all</span><span class="op">-</span><span class="va">casual_effect</span>,<span class="fl">3</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                     Method<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">est_all</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">p</span><span class="op">&lt;-</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span>data<span class="op">=</span><span class="va">data.bar</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x<span class="op">=</span><span class="va">Method</span>, y<span class="op">=</span><span class="va">Bias</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -411,8 +411,8 @@ runs).</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="calculate-the-bootstrapping-estimation-standard-deviation-for-the-emultir-estimate">Calculate the bootstrapping estimation standard deviation for the
-eMultiR estimate<a class="anchor" aria-label="anchor" href="#calculate-the-bootstrapping-estimation-standard-deviation-for-the-emultir-estimate"></a>
+<h2 id="calculate-the-bootstrapping-estimation-standard-deviation-for-the-emultimr-estimate">Calculate the bootstrapping estimation standard deviation for the
+eMultiMR estimate<a class="anchor" aria-label="anchor" href="#calculate-the-bootstrapping-estimation-standard-deviation-for-the-emultimr-estimate"></a>
 </h2>
 <p>We also provide a function <code>boostrap.multir.plus.en.se()</code>
 for calculating the bootstrapping standard deviation. However, the

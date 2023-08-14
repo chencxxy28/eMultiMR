@@ -1,4 +1,4 @@
-Package: eMultiR
+Package: eMultiMR
 Type: Package
 Title: Estimation of causal treatment effect on a binary outcome with multiple robustness and integrated information from secondary outcomes
 Version: 0.1.0

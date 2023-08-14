@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-**eMultiMR** is a multiply robust framework for estimation of causal effect under the setting with a binary outcome, where multiple propensity score models and conditional mean imputation models are used to ensure estimation robustness. Moreover, **eMultiMR** reduces estimation variability by incorporating secondary outcomes that are highly correlated with the primary binary outcome. The resulting estimates are less sensitive to model mis-specification compared to that based on the existing state-of-the-art methods (e.g., doubly robust estimators).
+**eMultiMR** is a multipe-model-based framework for estimation of causal effect under the setting with a binary outcome, where multiple propensity score models and conditional mean imputation models are used to ensure estimation robustness. Moreover, **eMultiMR** reduces estimation variability by incorporating secondary outcomes that are highly correlated with the primary binary outcome. The resulting estimates are less sensitive to model mis-specification compared to that based on the existing state-of-the-art methods (e.g., doubly robust estimators).
 
 # Installation the package
 To begin with, the user need to install our packages
@@ -32,7 +32,7 @@ library(mvtnorm)
 library(bindata)
 library(geepack) 
 library(ggplot2)
-library(eMultiR)
+library(eMultiMR)
 readRDSFromWeb <- function(ref) {
   readRDS(gzcon(url(ref)))
 }
@@ -112,7 +112,7 @@ set.seed(1234567)
 
 # Compare different methods in terms of estimation bias
 
-We provide the following codes to calculate the eMultiR estimate without information borrow from the secondary outcomes given two candidate models for the propensity scores (PS) and conditional means (CM), none of which are correctly specified. To prepare the estimation, we need to fit the PS models and CM models first. Consider the following three PS models: the right model, wrong model1, and wrong model2. The following code requires substantial running time due to sample size of 10000, in order to stabilize the estimation. The user can directly run the code in the session of `Read estimate results directly` to visualize the estimation bias. The user can also make the sample size `n` smaller, such as n=300.   
+We provide the following codes to calculate the eMultiMR estimate without information borrow from the secondary outcomes given two candidate models for the propensity scores (PS) and conditional means (CM), none of which are correctly specified. To prepare the estimation, we need to fit the PS models and CM models first. Consider the following three PS models: the right model, wrong model1, and wrong model2. The following code requires substantial running time due to sample size of 10000, in order to stabilize the estimation. The user can directly run the code in the session of `Read estimate results directly` to visualize the estimation bias. The user can also make the sample size `n` smaller, such as n=300.   
 
 ## The model based on IPTW method
 ```{r,message=FALSE,eval=FALSE}
@@ -244,8 +244,8 @@ Run the function `dr.est()` to obtain the DR estimate by considering the PS wron
 est.dr.ww[2]-casual_effect
 ```
 
-## The model based on eMultiR method without information borrow from the secondary outcomes
-For the MultiR estimate, we consider two wrong PS models and two wrong CM models. First, run the function `est.fct.or()` to obtain the estimating function from the CM method.
+## The model based on eMultiMR method without information borrow from the secondary outcomes
+For the MultiMR estimate, we consider two wrong PS models and two wrong CM models. First, run the function `est.fct.or()` to obtain the estimating function from the CM method.
 ```{r,message=FALSE,eval=FALSE}
  #estimating fct for or: trt group
   est.or.fct.trt11<-est.fct.or(eta=est.or.wrong2.all,pseudo_y=pseudo_y.trt1.wrong2,trt=1,n=n)
@@ -261,13 +261,13 @@ Run the function `multir.propensity.or()` to obtain the calibration scores
 Prop_multir_ww<-multir.propensity.or(prob_fit1=prob_fitted_wrong2, prob_fit2=prob_fitted_wrong, or_fit11=est.or.fct.trt11, or_fit12=est.or.fct.trt12, or_fit01=est.or.fct.trt01, or_fit02=est.or.fct.trt02, trt_ind=trt_a)
 ```
 
-Run the function `multir.est()` to obtain the MultiR estimate
+Run the function `multir.est()` to obtain the MultiMR estimate
 ```{r,message=FALSE,eval=FALSE}  
   eta_multir_ww<-multir.est(Prop_multir=Prop_multir_ww,trt_ind=trt_a,main_outcome=yy)
   eta_multir_ww[2]-casual_effect
 ```
 
-## The model based on eMultiR method with information borrow from the secondary outcomes
+## The model based on eMultiMR method with information borrow from the secondary outcomes
 Run the function `MinBo.one()` to obtain the scores of information borrow
 ```{r,message=FALSE,eval=FALSE}
   #MinBo: one secondary outcome situation
@@ -276,7 +276,7 @@ Run the function `MinBo.one()` to obtain the scores of information borrow
   summary(Prop_scores)
 ```
 
-Run the function `multir.ib.est()` to obtain the eMultiR estimate with information borrow
+Run the function `multir.ib.est()` to obtain the eMultiMR estimate with information borrow
 ```{r,message=FALSE,eval=FALSE}
 eta_emultir_ww<-multir.ib.est(Prop_multir=Prop_multir_ww,Prop_scores=Prop_scores,trt_ind=trt_a,main_outcome=yy)
 eta_emultir_ww[2]-casual_effect
@@ -285,19 +285,19 @@ eta_emultir_ww[2]-casual_effect
 ## Make a figure for bias evaluation
 ```{r,message=FALSE,eval=FALSE}
 est_all<-c(eta_emultir_ww[2],eta_multir_ww[2],est.dr.ww[2],est_cm[2,],eta_iptw[2,])
-names(est_all)<-c("eMultiR_ww","MultiR_ww","DR_ww",
+names(est_all)<-c("eMultiMR_ww","MultiMR_ww","DR_ww",
                   "CM_r","CM_w1","CM_w2",
                   "IPTW_r","IPTW_w1","IPTW_w2")
 saveRDS(est_all,"/Users/chixiang.chen/Library/CloudStorage/OneDrive-UniversityofMarylandSchoolofMedicine/research_mingwang/causal/package_results/est_all.rds")
 ```
 
 ## Read estimate results directly
-The user can skip the above codes and run the following codes to visualize the results. It can be seen below that the eMultiR estimates with/without information borrow show much less estimation bias compared to other estimates Note that when the PS or CM model is right, then IPTW_r and CM_r estimates have small bias, whereas when the PS or CM models are wrong, existing estimates have large bias. The eMultiR estimates are still satisfactory even if all candidate models are wrong.
+The user can skip the above codes and run the following codes to visualize the results. It can be seen below that the eMultiMR estimates with/without information borrow show much less estimation bias compared to other estimates Note that when the PS or CM model is right, then IPTW_r and CM_r estimates have small bias, whereas when the PS or CM models are wrong, existing estimates have large bias. The eMultiMR estimates are still satisfactory even if all candidate models are wrong.
 
 Note that the result relies the data from only one simulation. More rigorous evaluation should be done by multiple simulation runs (eg., 100 runs).
 
 ```{r,message=FALSE}
-est_all<-readRDSFromWeb("https://github.com/chencxxy28/eMultiR/raw/main/vignettes/data/est_all.rds")
+est_all<-readRDSFromWeb("https://github.com/chencxxy28/eMultiMR/raw/main/vignettes/data/est_all.rds")
 data.bar<-data.frame(Bias=abs(round(est_all-casual_effect,3)),
                      Method=names(est_all))
 p<-ggplot(data=data.bar, aes(x=Method, y=Bias)) +
@@ -308,7 +308,7 @@ p
 ```
 
 
-# Calculate the bootstrapping estimation standard deviation for the eMultiR estimate
+# Calculate the bootstrapping estimation standard deviation for the eMultiMR estimate
 We also provide a function `boostrap.multir.plus.en.se()` for calculating the bootstrapping standard deviation. However, the function should be changed as well if the candidate models are changed. The user are suggested to write their own codes for bootstrapping in practice. The function here provides a basic guidance. The following code will take a long time to run.
 
 ```{r,message=FALSE,eval=FALSE}
